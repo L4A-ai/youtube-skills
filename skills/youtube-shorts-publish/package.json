@@ -1,0 +1,17 @@
+{
+  "name": "youtube-shorts-publish-skill",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Self-contained CLI bundled with the youtube-shorts-publish agent skill",
+  "bin": {
+    "ytshorts": "./scripts/ytshorts.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "check": "node --check scripts/ytshorts.mjs && node --check scripts/ytshorts-lib.mjs && node --check scripts/ytshorts-api.mjs && node --check scripts/ytshorts-state.mjs",
+    "test": "node --test scripts/*.test.mjs"
+  }
+}

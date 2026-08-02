@@ -1,0 +1,13 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "YouTube Publishing",
+      "description": "Safely inspect, plan, upload, schedule, and verify YouTube Shorts through the official API, with local media checks, private defaults, explicit confirmation, and processing-state verification.",
+      "skills": [
+        "youtube-shorts-publish"
+      ]
+    }
+  ]
+}
