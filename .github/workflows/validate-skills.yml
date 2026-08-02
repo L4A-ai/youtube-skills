@@ -56,6 +56,11 @@ jobs:
           npm run check
           npm test
 
+      - name: Install FFmpeg for media smoke test
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ffmpeg
+
       - name: Real ffprobe smoke test stays local
         working-directory: skills/youtube-shorts-publish
         run: |
