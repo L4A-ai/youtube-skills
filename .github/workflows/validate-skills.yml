@@ -177,6 +177,12 @@ jobs:
             "README must state the count rule")
           gate(readme.include?("node examples/verify-zero-publish.mjs"), "README must expose the zero-input verifier")
 
+          skill = File.read("skills/youtube-shorts-publish/SKILL.md")
+          gate(skill.include?("issues/new?template=zero-publish-evaluation.yml"),
+            "installed SKILL.md must link the structured tester form")
+          gate(skill.include?("node examples/verify-zero-publish.mjs"),
+            "installed SKILL.md must expose the zero-input verifier")
+
           observed = fields.fetch("observed-evidence").dig("attributes", "placeholder")
           %w[schema_version skill_version plan_local_writes passed].each do |term|
             gate(observed.include?(term), "observed evidence placeholder must include #{term}")

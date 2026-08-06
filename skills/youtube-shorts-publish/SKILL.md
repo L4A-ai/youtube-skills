@@ -63,6 +63,11 @@ Treat `passed: true` only as a deterministic installation and safety-contract ch
 prove that a real upload will succeed or that YouTube will place media in the Shorts Feed. The
 verifier requires `ffmpeg` as well as `ffprobe`; both are provided by FFmpeg.
 
+After an independent installed-copy run, use the [structured zero-publish tester form](https://github.com/L4A-ai/youtube-skills/issues/new?template=zero-publish-evaluation.yml).
+Choose completed only if the exact no-argument verifier ran, and never include OAuth data, tokens,
+client secrets, authorization codes, resumable URLs, a real channel ID, or personal paths. This is
+installation and safety-contract evidence, not proof of a live upload or Shorts Feed placement.
+
 ## First-time authorization
 
 Read [OAuth setup](references/oauth-setup.md), then run:
