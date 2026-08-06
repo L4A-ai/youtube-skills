@@ -33,23 +33,51 @@ jobs:
           npx --yes ajv-cli@5.0.0 validate --spec=draft2020 \
             -s "$RUNNER_TEMP/plugin.schema.json" \
             -d plugin.json
-          plugin_root=$(realpath .)
-          for package_path in plugin.json skills skills/*/SKILL.md; do
-            resolved=$(realpath "$package_path")
-            case "$resolved" in
-              "$plugin_root"|"$plugin_root"/*) ;;
-              *) echo "::error::$package_path escapes the plugin root"; exit 1 ;;
-            esac
-          done
+
           test -f plugin.json
           test -d skills
-          test ! -e mcp.json || { echo "::error::mcp.json requires Agent Plugins MCP validation"; exit 1; }
+          if [[ -e .codex-plugin || -L .codex-plugin ]]; then
+            echo "::error::.codex-plugin is a Codex-specific package format; portable plugins require root plugin.json"
+            exit 1
+          fi
+
+          mapfile -d '' tracked_skills < <(git ls-files -z -- ':(glob)**/SKILL.md')
+          if (( ${#tracked_skills[@]} == 0 )); then
+            echo "::error::no tracked SKILL.md files"
+            exit 1
+          fi
+          for skill_file in "${tracked_skills[@]}"; do
+            if [[ ! "$skill_file" =~ ^skills/[^/]+/SKILL\.md$ ]]; then
+              echo "::error file=$skill_file::tracked SKILL.md must be exactly skills/<name>/SKILL.md"
+              exit 1
+            fi
+          done
+
+          plugin_root=$(realpath .)
+          while IFS= read -r -d '' package_path; do
+            if [[ "/$package_path/" == *"/.codex-plugin/"* ]]; then
+              echo "::error file=$package_path::.codex-plugin paths are not portable Agent Plugins paths"
+              exit 1
+            fi
+            if ! resolved=$(realpath -- "$package_path"); then
+              echo "::error file=$package_path::tracked package path is dangling or cannot be resolved"
+              exit 1
+            fi
+            case "$resolved" in
+              "$plugin_root"|"$plugin_root"/*) ;;
+              *) echo "::error file=$package_path::tracked package path resolves outside the plugin root: $resolved"; exit 1 ;;
+            esac
+          done < <(git ls-files -z)
+
+          if [[ -e mcp.json || -L mcp.json ]]; then
+            echo "::error::mcp.json requires Agent Plugins MCP validation"
+            exit 1
+          fi
           python3 -m venv "$RUNNER_TEMP/skills-ref"
           "$RUNNER_TEMP/skills-ref/bin/pip" install --disable-pip-version-check \
             "git+https://github.com/agentskills/agentskills.git@${SKILLS_REF_COMMIT}#subdirectory=skills-ref"
-          for skill_dir in skills/*; do
-            test -d "$skill_dir" || continue
-            "$RUNNER_TEMP/skills-ref/bin/skills-ref" validate "$skill_dir"
+          for skill_file in "${tracked_skills[@]}"; do
+            "$RUNNER_TEMP/skills-ref/bin/skills-ref" validate "${skill_file%/SKILL.md}"
           done
 
       - name: Repository invariants
@@ -229,6 +257,7 @@ jobs:
             references/media-preparation.md; do
             test -f "$installed/$file" || { echo "::error::installed skill missing $file"; exit 1; }
           done
+          "$RUNNER_TEMP/skills-ref/bin/skills-ref" validate "$installed"
           node "$installed/scripts/ytshorts.mjs" --help | grep -q "ytshorts"
           (cd "$installed" && npm test)
           echo "ok: installed skill is self-contained"
