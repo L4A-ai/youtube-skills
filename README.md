@@ -15,6 +15,51 @@ Install the skill with:
 npx skills add L4A-ai/youtube-skills --skill youtube-shorts-publish
 ```
 
+## Try it safely in 5 minutes
+
+No Google account, OAuth client, channel access, or real video is required. This evaluation creates
+a one-second portrait fixture in a temporary directory and runs only local inspection and planning.
+It cannot upload or change a YouTube channel. FFmpeg writes only the temporary fixture; the
+`plan` command must report zero network requests and zero local writes.
+
+Requirements: Node.js 20+ and FFmpeg.
+
+After installing the skill, paste this into your agent:
+
+> Use `$youtube-shorts-publish` to run a zero-publish safety evaluation. Locate the installed skill
+> directory. Do not run `auth`, `status`, `publish`, or any command with `--yes`. Create a fresh
+> temporary directory and use FFmpeg to generate a one-second 360x640 black H.264 video with silent
+> AAC audio. Run `inspect` on it. Then set `YTSHORTS_CONFIG_DIR` to a nonexistent `no-state` path
+> inside that temporary directory and run `plan` with title `5-minute safety check`, channel ID
+> `UCaaaaaaaaaaaaaaaaaaaaaa`, `--privacy private`, `--notify-subscribers no`,
+> `--made-for-kids no`, and `--contains-synthetic-media no`. Return only the displayed dimensions,
+> duration, codecs, `shorts_candidate`, `safe_to_publish`, privacy, subscriber notification setting,
+> `executed`, `network_requests`, `local_writes`, and whether the `no-state` path was created.
+
+![Zero-publish proof: a generated 360x640 fixture passed local Shorts inspection, and the dry plan reported no execution, network requests, config writes, or upload](media/youtube-zero-publish-proof.svg)
+
+Expected proof:
+
+```json
+{
+  "displayed_dimensions": {"width": 360, "height": 640},
+  "duration_seconds": 1,
+  "video_codec": "h264",
+  "audio_codec": "aac",
+  "shorts_candidate": true,
+  "safe_to_publish": true,
+  "privacy": "private",
+  "notify_subscribers": false,
+  "executed": false,
+  "network_requests": 0,
+  "local_writes": 0,
+  "config_dir_created": false
+}
+```
+
+`safe_to_publish` means the local plan passed its checks. It does not mean anything was uploaded.
+Configure OAuth only when you decide to test a real, explicitly confirmed upload.
+
 It supports:
 
 - `inspect` — ffprobe duration, displayed dimensions, rotation, SAR, codecs, audio, and local
