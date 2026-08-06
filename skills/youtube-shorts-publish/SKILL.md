@@ -51,6 +51,18 @@ node scripts/ytshorts.mjs doctor
 
 Requirements are Node.js 20+ and `ffprobe`. There are no npm runtime dependencies.
 
+## Verify the installed contract without YouTube
+
+Run `node examples/verify-zero-publish.mjs` with no arguments. It generates and removes a local
+one-second portrait fixture, then exercises only `inspect` and `plan`. It does not run `auth`,
+`status`, `publish`, or `--yes`; it points OAuth paths at absent sentinels and runs both CLI commands
+under a network guard that first passes a deliberately blocked canary. Return its compact stdout
+unchanged when the user asks for the evaluation result.
+
+Treat `passed: true` only as a deterministic installation and safety-contract check. It does not
+prove that a real upload will succeed or that YouTube will place media in the Shorts Feed. The
+verifier requires `ffmpeg` as well as `ffprobe`; both are provided by FFmpeg.
+
 ## First-time authorization
 
 Read [OAuth setup](references/oauth-setup.md), then run:

@@ -53,15 +53,21 @@ body:
     id: observed-evidence
     attributes:
       label: Sanitized observed evidence
-      description: Paste the compact fields returned by your agent. For an incomplete attempt, provide a small JSON object with completed=false, the stage, and the sanitized error. Do not paste full logs, credentials, tokens, personal paths, or a real channel ID.
+      description: If the verifier ran, paste its one-line JSON unchanged. If installation failed first, provide a small JSON object with status=error, stage=install, a sanitized error_code, and passed=false. Do not paste full logs, credentials, tokens, personal paths, or a real channel ID.
       render: json
       placeholder: |
         {
-          "shorts_candidate": true,
-          "safe_to_publish": true,
-          "executed": false,
-          "network_requests": 0,
-          "local_writes": 0
+          "schema_version": "1.0",
+          "skill_version": "0.1.0",
+          "status": "ok",
+          "safety": {
+            "network_guard_armed": true,
+            "network_requests": 0,
+            "youtube_writes": 0,
+            "plan_local_writes": 0,
+            "credential_files_created": false
+          },
+          "passed": true
         }
     validations:
       required: true
@@ -83,9 +89,9 @@ body:
       options:
         - label: I did not configure, read, expose, or submit OAuth credentials, tokens, client secrets, authorization codes, or a real channel ID.
           required: true
-        - label: I did not run `auth`, `status`, `publish`, or any command with `--yes`; no video was uploaded.
+        - label: If verifier execution was reached, I ran only `node examples/verify-zero-publish.mjs` with no arguments; otherwise I stopped before it ran. I did not run `auth`, `status`, `publish`, or any command with `--yes`, and no video was uploaded.
           required: true
-        - label: 'I used only `--privacy private` and `--notify-subscribers no`; if the plan completed, I observed `privacy: private` and `notify_subscribers: false`.'
+        - label: 'If the plan ran, it used only `--privacy private` and `--notify-subscribers no`; if it completed, I observed `privacy: private` and `notify_subscribers: false`.'
           required: true
         - label: This is my own independent run or attempt; I did not copy or simulate another tester's result.
           required: true

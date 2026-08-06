@@ -90,9 +90,15 @@ jobs:
           cmp AGENTS.md CLAUDE.md
           test -f skills/youtube-shorts-publish/SKILL.md
           test -f skills/youtube-shorts-publish/agents/openai.yaml
+          test -f skills/youtube-shorts-publish/examples/zero-publish-network-guard.mjs
+          test -f skills/youtube-shorts-publish/examples/verify-zero-publish.mjs
+          test -f media/youtube-zero-publish-proof.png
           python3 - <<'PY'
           import json, os
           manifest = json.load(open('skills.sh.json'))
+          plugin = json.load(open('plugin.json'))
+          package = json.load(open('skills/youtube-shorts-publish/package.json'))
+          assert plugin['version'] == package['version'], 'plugin and skill package versions differ'
           listed = {skill for group in manifest['groupings'] for skill in group['skills']}
           on_disk = {name for name in os.listdir('skills') if os.path.isdir(f'skills/{name}')}
           assert listed == on_disk, f'manifest mismatch: listed={listed}, on_disk={on_disk}'
@@ -156,6 +162,8 @@ jobs:
           %w[OAuth upload privacy independent].each do |term|
             gate(safety_text.downcase.include?(term.downcase), "safety confirmations must mention #{term}")
           end
+          gate(safety_text.include?("otherwise I stopped before it ran"),
+            "incomplete attempts must not claim the verifier ran")
 
           intro = body.select { |item| item["type"] == "markdown" }
             .map { |item| item.dig("attributes", "value") }.compact.join("\n")
@@ -167,6 +175,15 @@ jobs:
           gate(readme.include?("issues/new?template=zero-publish-evaluation.yml"), "README must link the form")
           gate(readme.include?("Only a report that explicitly selects **Installed and ran the zero-publish"),
             "README must state the count rule")
+          gate(readme.include?("node examples/verify-zero-publish.mjs"), "README must expose the zero-input verifier")
+
+          observed = fields.fetch("observed-evidence").dig("attributes", "placeholder")
+          %w[schema_version skill_version plan_local_writes passed].each do |term|
+            gate(observed.include?(term), "observed evidence placeholder must include #{term}")
+          end
+          observed_description = fields.fetch("observed-evidence").dig("attributes", "description")
+          gate(observed_description.include?("installation failed first"),
+            "install failures must have a truthful evidence path")
 
           puts "ok: zero-publish issue form is parseable and count eligibility is explicit"
           RUBY
@@ -202,30 +219,42 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes ffmpeg
 
-      - name: Real ffprobe smoke test stays local
+      - name: Real zero-input proof is deterministic and stays local
         working-directory: skills/youtube-shorts-publish
         run: |
-          work=$(mktemp -d)
-          ffmpeg -hide_banner -loglevel error \
-            -f lavfi -i color=c=black:s=360x640:d=1 \
-            -f lavfi -i anullsrc=r=48000:cl=stereo \
-            -shortest -c:v libx264 -pix_fmt yuv420p -c:a aac "$work/fixture.mp4"
-          node scripts/ytshorts.mjs inspect "$work/fixture.mp4" > "$work/inspect.json"
-          YTSHORTS_CONFIG_DIR="$work/no-state" node scripts/ytshorts.mjs plan "$work/fixture.mp4" \
-            --title "CI fixture" \
-            --channel-id UCaaaaaaaaaaaaaaaaaaaaaa \
-            --made-for-kids no \
-            --contains-synthetic-media no > "$work/plan.json"
-          python3 - "$work" <<'PY'
-          import json, os, sys
-          work = sys.argv[1]
-          inspect = json.load(open(f'{work}/inspect.json'))
-          plan = json.load(open(f'{work}/plan.json'))
-          assert inspect['media']['shorts_candidate'] is True
-          assert plan['plan']['safe_to_publish'] is True
-          assert plan['network_requests'] == 0 and plan['local_writes'] == 0
-          assert not os.path.exists(f'{work}/no-state')
-          print('ok: real fixture is eligible and plan had no side effects')
+          first=$(node examples/verify-zero-publish.mjs)
+          second=$(node examples/verify-zero-publish.mjs)
+          test "$first" = "$second"
+          expected=$(python3 - <<'PY'
+          from pathlib import Path
+          text = Path('../../README.md').read_text()
+          marker = 'Expected stdout (one line):\n\n```json\n'
+          print(text.split(marker, 1)[1].split('\n```', 1)[0])
+          PY
+          )
+          test "$first" = "$expected"
+          python3 - "$first" <<'PY'
+          import json, sys
+          result = json.loads(sys.argv[1])
+          assert result['schema_version'] == '1.0'
+          assert result['skill_version'] == '0.1.0'
+          assert result['inspection']['shorts_candidate'] is True
+          assert result['plan']['safe_to_publish'] is True
+          assert result['plan']['privacy'] == 'private'
+          assert result['plan']['executed'] is False
+          assert result['safety'] == {
+              'oauth_used': False,
+              'network_guard_armed': True,
+              'network_requests': 0,
+              'youtube_writes': 0,
+              'plan_local_writes': 0,
+              'config_dir_created': False,
+              'credential_files_created': False,
+              'temporary_fixture_written': True,
+              'temporary_artifacts_removed': True,
+          }
+          assert result['passed'] is True
+          print('ok: real zero-input proof passed twice with identical output')
           PY
 
       - name: No credentials or operator media committed
@@ -258,6 +287,7 @@ jobs:
           installed=.claude/skills/youtube-shorts-publish
           for file in SKILL.md agents/openai.yaml package.json scripts/ytshorts.mjs \
             scripts/ytshorts-lib.mjs scripts/ytshorts-api.mjs scripts/ytshorts-state.mjs \
+            examples/zero-publish-network-guard.mjs examples/verify-zero-publish.mjs \
             references/oauth-setup.md references/youtube-api-and-shorts.md \
             references/media-preparation.md; do
             test -f "$installed/$file" || { echo "::error::installed skill missing $file"; exit 1; }
@@ -265,4 +295,15 @@ jobs:
           "$RUNNER_TEMP/skills-ref/bin/skills-ref" validate "$installed"
           node "$installed/scripts/ytshorts.mjs" --help | grep -q "ytshorts"
           (cd "$installed" && npm test)
+          proof=$(cd "$installed" && node examples/verify-zero-publish.mjs)
+          python3 - "$proof" <<'PY'
+          import json, sys
+          result = json.loads(sys.argv[1])
+          assert result['passed'] is True
+          assert result['safety']['network_guard_armed'] is True
+          assert result['safety']['network_requests'] == 0
+          assert result['safety']['youtube_writes'] == 0
+          assert result['safety']['temporary_artifacts_removed'] is True
+          print('ok: installed zero-input proof passed')
+          PY
           echo "ok: installed skill is self-contained"
