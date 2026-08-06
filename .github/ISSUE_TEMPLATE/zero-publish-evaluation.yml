@@ -1,0 +1,91 @@
+name: Zero-publish evaluation report
+description: Report an independent five-minute local evaluation without OAuth or an upload.
+title: "[Zero-publish eval]: "
+labels:
+  - tester-report
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing `youtube-shorts-publish` in its zero-publish path.
+
+        Only a report that explicitly selects **Installed and ran the zero-publish evaluation** is count-eligible as a completed independent test. The `tester-report` label alone is not evidence of a completed run. Install-only and failed attempts help improve onboarding, but they do not count as completed runs.
+
+        Do not paste OAuth credentials, tokens, client secrets, authorization codes, resumable upload URLs, or a real channel ID. This evaluation needs none of them.
+
+  - type: dropdown
+    id: completion
+    attributes:
+      label: Evaluation completion
+      description: Select the one state that exactly describes your own attempt. There is no preselected answer.
+      multiple: false
+      options:
+        - Installed and ran the zero-publish evaluation
+        - Installed, but did not run the evaluation
+        - Installation or evaluation failed before completion
+    validations:
+      required: true
+
+  - type: dropdown
+    id: expected-fields
+    attributes:
+      label: Did every expected field match?
+      description: Compare your result with the expected JSON in the README. Use Not checked when the evaluation did not complete.
+      multiple: false
+      options:
+        - Yes - all expected fields matched
+        - No - one or more expected fields differed
+        - Not checked - evaluation did not complete
+    validations:
+      required: true
+
+  - type: textarea
+    id: mismatch
+    attributes:
+      label: One concrete mismatch or failure detail
+      description: Name one expected field and its observed value. If everything matched, write "None - all expected fields matched." For an install-only or failed attempt, name the exact stage and one concrete error. Remove secrets and personal paths.
+      placeholder: "Example: network_requests was 1, expected 0."
+    validations:
+      required: true
+
+  - type: textarea
+    id: observed-evidence
+    attributes:
+      label: Sanitized observed evidence
+      description: Paste the compact fields returned by your agent. For an incomplete attempt, provide a small JSON object with completed=false, the stage, and the sanitized error. Do not paste full logs, credentials, tokens, personal paths, or a real channel ID.
+      render: json
+      placeholder: |
+        {
+          "shorts_candidate": true,
+          "safe_to_publish": true,
+          "executed": false,
+          "network_requests": 0,
+          "local_writes": 0
+        }
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Test environment
+      description: Name the agent, operating system, Node.js major version, and FFmpeg version. Do not include usernames or personal paths.
+      placeholder: "Codex; macOS 15; Node.js 20; FFmpeg 8"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: safety-and-integrity
+    attributes:
+      label: Safety and report integrity
+      description: Every statement is required for this zero-publish report, including incomplete attempts.
+      options:
+        - label: I did not configure, read, expose, or submit OAuth credentials, tokens, client secrets, authorization codes, or a real channel ID.
+          required: true
+        - label: I did not run `auth`, `status`, `publish`, or any command with `--yes`; no video was uploaded.
+          required: true
+        - label: 'I used only `--privacy private` and `--notify-subscribers no`; if the plan completed, I observed `privacy: private` and `notify_subscribers: false`.'
+          required: true
+        - label: This is my own independent run or attempt; I did not copy or simulate another tester's result.
+          required: true
