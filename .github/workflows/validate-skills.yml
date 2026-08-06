@@ -6,15 +6,51 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:
           node-version: '20'
+
+      - name: Validate Agent Plugins v1 and Agent Skills
+        env:
+          PLUGIN_SCHEMA_SHA256: 0a4aad95ce337878ad38802ebf0daa3fde76abe3f65400c86bcbb1ec0b3ab883
+          SKILLS_REF_COMMIT: 217be548739f21d6008915c29aefe320ea1a90af
+        run: |
+          curl --fail --silent --show-error \
+            https://agent-plugins.org/schemas/1.0.0/plugin.schema.json \
+            --output "$RUNNER_TEMP/plugin.schema.json"
+          echo "${PLUGIN_SCHEMA_SHA256}  $RUNNER_TEMP/plugin.schema.json" | sha256sum --check --status
+          npx --yes ajv-cli@5.0.0 validate --spec=draft2020 \
+            -s "$RUNNER_TEMP/plugin.schema.json" \
+            -d plugin.json
+          plugin_root=$(realpath .)
+          for package_path in plugin.json skills skills/*/SKILL.md; do
+            resolved=$(realpath "$package_path")
+            case "$resolved" in
+              "$plugin_root"|"$plugin_root"/*) ;;
+              *) echo "::error::$package_path escapes the plugin root"; exit 1 ;;
+            esac
+          done
+          test -f plugin.json
+          test -d skills
+          test ! -e mcp.json || { echo "::error::mcp.json requires Agent Plugins MCP validation"; exit 1; }
+          python3 -m venv "$RUNNER_TEMP/skills-ref"
+          "$RUNNER_TEMP/skills-ref/bin/pip" install --disable-pip-version-check \
+            "git+https://github.com/agentskills/agentskills.git@${SKILLS_REF_COMMIT}#subdirectory=skills-ref"
+          for skill_dir in skills/*; do
+            test -d "$skill_dir" || continue
+            "$RUNNER_TEMP/skills-ref/bin/skills-ref" validate "$skill_dir"
+          done
 
       - name: Repository invariants
         run: |

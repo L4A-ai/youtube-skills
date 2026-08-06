@@ -1,0 +1,20 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "youtube-skills",
+  "version": "0.1.0",
+  "description": "Safely inspect, upload, schedule, and verify YouTube Shorts through the official YouTube Data API.",
+  "author": {
+    "name": "L4A AI",
+    "url": "https://github.com/L4A-ai"
+  },
+  "homepage": "https://github.com/L4A-ai/youtube-skills",
+  "repository": "https://github.com/L4A-ai/youtube-skills",
+  "license": "MIT",
+  "keywords": [
+    "youtube",
+    "shorts",
+    "publishing",
+    "video",
+    "agent-skills"
+  ]
+}
