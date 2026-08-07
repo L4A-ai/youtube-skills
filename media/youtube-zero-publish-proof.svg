@@ -2,9 +2,11 @@
   <title id="title">Zero-publish YouTube Shorts safety proof</title>
   <desc id="description">A zero-input verifier generated and removed a one-second 360 by 640 H.264 and AAC fixture after local Shorts inspection and dry planning. The plan stayed private, did not notify subscribers, did not execute, made zero network requests, made zero plan writes, and created no configuration directory.</desc>
   <metadata>
-    Evidence captured 2026-08-07 by examples/verify-zero-publish.mjs using a fresh temporary FFmpeg fixture followed by ytshorts inspect and ytshorts plan.
-    Input: 1 second, 360x640, H.264 video, silent AAC audio.
-    Output: schema_version=1.0; skill_version=0.1.0; shorts_candidate=true; safe_to_publish=true; privacy=private; notify_subscribers=false; executed=false; network_guard_armed=true; network_requests=0; plan_local_writes=0; config_dir_created=false; credential_files_created=false; temporary_artifacts_removed=true.
+    Observed: 2026-08-07.
+    Command: node examples/verify-zero-publish.mjs (no arguments).
+    Input: generated temporary fixture; duration_seconds=1; width=360; height=640; video_codec=h264; audio_codec=aac.
+    Output: schema_version=1.0; skill_version=0.1.0; fixture=generated-360x640-h264-aac; status=ok; displayed_width=360; displayed_height=640; duration_seconds=1; video_codec=h264; audio_codec=aac; shorts_candidate=true; safe_to_publish=true; privacy=private; notify_subscribers=false; executed=false; oauth_used=false; network_guard_armed=true; network_requests=0; youtube_writes=0; plan_local_writes=0; config_dir_created=false; credential_files_created=false; temporary_fixture_written=true; temporary_artifacts_removed=true; passed=true.
+    Evidence boundary: local capability and safety-contract proof only; not an upload, Shorts Feed placement, install, adoption, or user-attribution claim.
   </metadata>
   <defs>
     <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
