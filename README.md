@@ -53,10 +53,12 @@ that same guard.
 Configure OAuth only when you decide to test a real, explicitly confirmed upload.
 
 [Send a structured zero-publish evaluation report](https://github.com/L4A-ai/youtube-skills/issues/new?template=zero-publish-evaluation.yml)
-after your run. Only a report that explicitly selects **Installed and ran the zero-publish
-evaluation** may count as a completed independent test. Install-only and failed attempts are still
-useful for improving onboarding, but they do not count as completed runs. Never include OAuth
-credentials, tokens, client secrets, authorization codes, or a real channel ID in a report.
+after your run. Only a reporter who independently installed and actually ran
+`youtube-shorts-publish` for their own non-internal purpose, and attests that they are not a
+maintainer, a maintainer's teammate, or an internal tester, may select the completed count-eligible
+outcome. Install-only and failed attempts are still useful for improving onboarding, but they do
+not count as completed runs. Never include OAuth credentials, tokens, client secrets,
+authorization codes, or a real channel ID in a report.
 
 It supports:
 

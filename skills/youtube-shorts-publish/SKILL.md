@@ -64,9 +64,12 @@ prove that a real upload will succeed or that YouTube will place media in the Sh
 verifier requires `ffmpeg` as well as `ffprobe`; both are provided by FFmpeg.
 
 After an independent installed-copy run, use the [structured zero-publish tester form](https://github.com/L4A-ai/youtube-skills/issues/new?template=zero-publish-evaluation.yml).
-Choose completed only if the exact no-argument verifier ran, and never include OAuth data, tokens,
-client secrets, authorization codes, resumable URLs, a real channel ID, or personal paths. This is
-installation and safety-contract evidence, not proof of a live upload or Shorts Feed placement.
+Choose completed only if the reporter independently installed and actually ran
+`youtube-shorts-publish` for their own non-internal purpose and is not a maintainer, a maintainer's
+teammate, or an internal tester. Use the incomplete outcome when the exact no-argument verifier did
+not finish, and never include OAuth data, tokens, client secrets, authorization codes, resumable
+URLs, a real channel ID, or personal paths. This is installation and safety-contract evidence, not
+proof of a live upload or Shorts Feed placement.
 
 ## First-time authorization
 
