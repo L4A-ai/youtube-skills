@@ -6,29 +6,193 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
+    env:
+      DO_NOT_TRACK: "1"
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:
           node-version: '20'
+
+      - name: Enforce telemetry-free maintainer checks
+        run: node .github/scripts/check-ci-telemetry.mjs
+
+      - name: Validate Agent Plugins v1 and Agent Skills
+        env:
+          PLUGIN_SCHEMA_SHA256: 0a4aad95ce337878ad38802ebf0daa3fde76abe3f65400c86bcbb1ec0b3ab883
+          SKILLS_REF_COMMIT: 217be548739f21d6008915c29aefe320ea1a90af
+        run: |
+          curl --fail --silent --show-error \
+            https://agent-plugins.org/schemas/1.0.0/plugin.schema.json \
+            --output "$RUNNER_TEMP/plugin.schema.json"
+          echo "${PLUGIN_SCHEMA_SHA256}  $RUNNER_TEMP/plugin.schema.json" | sha256sum --check --status
+          npx --yes ajv-cli@5.0.0 validate --spec=draft2020 \
+            -s "$RUNNER_TEMP/plugin.schema.json" \
+            -d plugin.json
+
+          test -f plugin.json
+          test -d skills
+          if [[ -e .codex-plugin || -L .codex-plugin ]]; then
+            echo "::error::.codex-plugin is a Codex-specific package format; portable plugins require root plugin.json"
+            exit 1
+          fi
+
+          mapfile -d '' tracked_skills < <(git ls-files -z -- ':(glob)**/SKILL.md')
+          if (( ${#tracked_skills[@]} == 0 )); then
+            echo "::error::no tracked SKILL.md files"
+            exit 1
+          fi
+          for skill_file in "${tracked_skills[@]}"; do
+            if [[ ! "$skill_file" =~ ^skills/[^/]+/SKILL\.md$ ]]; then
+              echo "::error file=$skill_file::tracked SKILL.md must be exactly skills/<name>/SKILL.md"
+              exit 1
+            fi
+          done
+
+          plugin_root=$(realpath .)
+          while IFS= read -r -d '' package_path; do
+            if [[ "/$package_path/" == *"/.codex-plugin/"* ]]; then
+              echo "::error file=$package_path::.codex-plugin paths are not portable Agent Plugins paths"
+              exit 1
+            fi
+            if ! resolved=$(realpath -- "$package_path"); then
+              echo "::error file=$package_path::tracked package path is dangling or cannot be resolved"
+              exit 1
+            fi
+            case "$resolved" in
+              "$plugin_root"|"$plugin_root"/*) ;;
+              *) echo "::error file=$package_path::tracked package path resolves outside the plugin root: $resolved"; exit 1 ;;
+            esac
+          done < <(git ls-files -z)
+
+          if [[ -e mcp.json || -L mcp.json ]]; then
+            echo "::error::mcp.json requires Agent Plugins MCP validation"
+            exit 1
+          fi
+          python3 -m venv "$RUNNER_TEMP/skills-ref"
+          "$RUNNER_TEMP/skills-ref/bin/pip" install --disable-pip-version-check \
+            "git+https://github.com/agentskills/agentskills.git@${SKILLS_REF_COMMIT}#subdirectory=skills-ref"
+          for skill_file in "${tracked_skills[@]}"; do
+            "$RUNNER_TEMP/skills-ref/bin/skills-ref" validate "${skill_file%/SKILL.md}"
+          done
 
       - name: Repository invariants
         run: |
           cmp AGENTS.md CLAUDE.md
           test -f skills/youtube-shorts-publish/SKILL.md
           test -f skills/youtube-shorts-publish/agents/openai.yaml
+          test -f skills/youtube-shorts-publish/examples/zero-publish-network-guard.mjs
+          test -f skills/youtube-shorts-publish/examples/verify-zero-publish.mjs
+          test -f media/youtube-zero-publish-proof.png
           python3 - <<'PY'
           import json, os
           manifest = json.load(open('skills.sh.json'))
+          plugin = json.load(open('plugin.json'))
+          package = json.load(open('skills/youtube-shorts-publish/package.json'))
+          assert plugin['version'] == package['version'], 'plugin and skill package versions differ'
           listed = {skill for group in manifest['groupings'] for skill in group['skills']}
           on_disk = {name for name in os.listdir('skills') if os.path.isdir(f'skills/{name}')}
           assert listed == on_disk, f'manifest mismatch: listed={listed}, on_disk={on_disk}'
           print(f'ok: {len(listed)} skill(s)')
           PY
+
+      - name: Zero-publish evaluator report contract
+        run: |
+          ruby <<'RUBY'
+          require "yaml"
+
+          def gate(condition, message)
+            abort "zero-publish report contract: #{message}" unless condition
+          end
+
+          template_path = ".github/ISSUE_TEMPLATE/zero-publish-evaluation.yml"
+          form = YAML.safe_load(File.read(template_path), aliases: false)
+          gate(form.is_a?(Hash), "issue form must parse as a mapping")
+          gate(form["labels"] == ["tester-report"], "form must apply only tester-report")
+
+          body = form.fetch("body")
+          ids = body.map { |item| item["id"] }.compact
+          fields = body.each_with_object({}) do |item, indexed|
+            indexed[item.fetch("id")] = item if item["id"]
+          end
+          gate(fields.length == ids.length, "field ids must be unique")
+
+          completion = fields.fetch("completion")
+          completion_options = completion.fetch("attributes").fetch("options")
+          gate(completion["type"] == "dropdown", "completion must be a dropdown")
+          gate(completion.dig("attributes", "label") == "Evaluation completion", "completion heading changed")
+          gate(completion_options == [
+            "Installed and ran the zero-publish evaluation",
+            "Installed, but did not run the evaluation",
+            "Installation or evaluation failed before completion"
+          ], "completion states changed")
+          gate(!completion.fetch("attributes").key?("default"), "completion must require an explicit choice")
+          gate(completion.dig("validations", "required") == true, "completion must be required")
+
+          expected = fields.fetch("expected-fields")
+          gate(expected["type"] == "dropdown", "expected-fields must be a dropdown")
+          gate(expected.dig("attributes", "label") == "Did every expected field match?", "expected-fields heading changed")
+          gate(expected.fetch("attributes").fetch("options") == [
+            "Yes - all expected fields matched",
+            "No - one or more expected fields differed",
+            "Not checked - evaluation did not complete"
+          ], "expected-fields choices changed")
+          gate(!expected.fetch("attributes").key?("default"), "expected-fields must require an explicit choice")
+          gate(expected.dig("validations", "required") == true, "expected-fields must be required")
+
+          %w[mismatch observed-evidence environment].each do |id|
+            gate(fields.fetch(id).dig("validations", "required") == true, "#{id} must be required")
+          end
+
+          safety = fields.fetch("safety-and-integrity")
+          safety_options = safety.fetch("attributes").fetch("options")
+          gate(safety["type"] == "checkboxes", "safety-and-integrity must use checkboxes")
+          gate(safety_options.length == 4, "four safety and integrity confirmations are required")
+          gate(safety_options.all? { |option| option["required"] == true }, "every safety confirmation must be required")
+          safety_text = safety_options.map { |option| option.fetch("label") }.join("\n")
+          %w[OAuth upload privacy independent].each do |term|
+            gate(safety_text.downcase.include?(term.downcase), "safety confirmations must mention #{term}")
+          end
+          gate(safety_text.include?("otherwise I stopped before it ran"),
+            "incomplete attempts must not claim the verifier ran")
+
+          intro = body.select { |item| item["type"] == "markdown" }
+            .map { |item| item.dig("attributes", "value") }.compact.join("\n")
+          gate(intro.include?("Only a report that explicitly selects **Installed and ran the zero-publish evaluation** is count-eligible"),
+            "count eligibility must stay fail-closed")
+          gate(intro.include?("label alone is not evidence"), "tester-report label must not imply completion")
+
+          readme = File.read("README.md")
+          gate(readme.include?("issues/new?template=zero-publish-evaluation.yml"), "README must link the form")
+          gate(readme.include?("Only a report that explicitly selects **Installed and ran the zero-publish"),
+            "README must state the count rule")
+          gate(readme.include?("node examples/verify-zero-publish.mjs"), "README must expose the zero-input verifier")
+
+          skill = File.read("skills/youtube-shorts-publish/SKILL.md")
+          gate(skill.include?("issues/new?template=zero-publish-evaluation.yml"),
+            "installed SKILL.md must link the structured tester form")
+          gate(skill.include?("node examples/verify-zero-publish.mjs"),
+            "installed SKILL.md must expose the zero-input verifier")
+
+          observed = fields.fetch("observed-evidence").dig("attributes", "placeholder")
+          %w[schema_version skill_version plan_local_writes passed].each do |term|
+            gate(observed.include?(term), "observed evidence placeholder must include #{term}")
+          end
+          observed_description = fields.fetch("observed-evidence").dig("attributes", "description")
+          gate(observed_description.include?("installation failed first"),
+            "install failures must have a truthful evidence path")
+
+          puts "ok: zero-publish issue form is parseable and count eligibility is explicit"
+          RUBY
 
       - name: Skill frontmatter is minimal and complete
         run: |
@@ -61,30 +225,42 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes ffmpeg
 
-      - name: Real ffprobe smoke test stays local
+      - name: Real zero-input proof is deterministic and stays local
         working-directory: skills/youtube-shorts-publish
         run: |
-          work=$(mktemp -d)
-          ffmpeg -hide_banner -loglevel error \
-            -f lavfi -i color=c=black:s=360x640:d=1 \
-            -f lavfi -i anullsrc=r=48000:cl=stereo \
-            -shortest -c:v libx264 -pix_fmt yuv420p -c:a aac "$work/fixture.mp4"
-          node scripts/ytshorts.mjs inspect "$work/fixture.mp4" > "$work/inspect.json"
-          YTSHORTS_CONFIG_DIR="$work/no-state" node scripts/ytshorts.mjs plan "$work/fixture.mp4" \
-            --title "CI fixture" \
-            --channel-id UCaaaaaaaaaaaaaaaaaaaaaa \
-            --made-for-kids no \
-            --contains-synthetic-media no > "$work/plan.json"
-          python3 - "$work" <<'PY'
-          import json, os, sys
-          work = sys.argv[1]
-          inspect = json.load(open(f'{work}/inspect.json'))
-          plan = json.load(open(f'{work}/plan.json'))
-          assert inspect['media']['shorts_candidate'] is True
-          assert plan['plan']['safe_to_publish'] is True
-          assert plan['network_requests'] == 0 and plan['local_writes'] == 0
-          assert not os.path.exists(f'{work}/no-state')
-          print('ok: real fixture is eligible and plan had no side effects')
+          first=$(node examples/verify-zero-publish.mjs)
+          second=$(node examples/verify-zero-publish.mjs)
+          test "$first" = "$second"
+          expected=$(python3 - <<'PY'
+          from pathlib import Path
+          text = Path('../../README.md').read_text()
+          marker = 'Expected stdout (one line):\n\n```json\n'
+          print(text.split(marker, 1)[1].split('\n```', 1)[0])
+          PY
+          )
+          test "$first" = "$expected"
+          python3 - "$first" <<'PY'
+          import json, sys
+          result = json.loads(sys.argv[1])
+          assert result['schema_version'] == '1.0'
+          assert result['skill_version'] == '0.1.0'
+          assert result['inspection']['shorts_candidate'] is True
+          assert result['plan']['safe_to_publish'] is True
+          assert result['plan']['privacy'] == 'private'
+          assert result['plan']['executed'] is False
+          assert result['safety'] == {
+              'oauth_used': False,
+              'network_guard_armed': True,
+              'network_requests': 0,
+              'youtube_writes': 0,
+              'plan_local_writes': 0,
+              'config_dir_created': False,
+              'credential_files_created': False,
+              'temporary_fixture_written': True,
+              'temporary_artifacts_removed': True,
+          }
+          assert result['passed'] is True
+          print('ok: real zero-input proof passed twice with identical output')
           PY
 
       - name: No credentials or operator media committed
@@ -117,10 +293,23 @@ jobs:
           installed=.claude/skills/youtube-shorts-publish
           for file in SKILL.md agents/openai.yaml package.json scripts/ytshorts.mjs \
             scripts/ytshorts-lib.mjs scripts/ytshorts-api.mjs scripts/ytshorts-state.mjs \
+            examples/zero-publish-network-guard.mjs examples/verify-zero-publish.mjs \
             references/oauth-setup.md references/youtube-api-and-shorts.md \
             references/media-preparation.md; do
             test -f "$installed/$file" || { echo "::error::installed skill missing $file"; exit 1; }
           done
+          "$RUNNER_TEMP/skills-ref/bin/skills-ref" validate "$installed"
           node "$installed/scripts/ytshorts.mjs" --help | grep -q "ytshorts"
           (cd "$installed" && npm test)
+          proof=$(cd "$installed" && node examples/verify-zero-publish.mjs)
+          python3 - "$proof" <<'PY'
+          import json, sys
+          result = json.loads(sys.argv[1])
+          assert result['passed'] is True
+          assert result['safety']['network_guard_armed'] is True
+          assert result['safety']['network_requests'] == 0
+          assert result['safety']['youtube_writes'] == 0
+          assert result['safety']['temporary_artifacts_removed'] is True
+          print('ok: installed zero-input proof passed')
+          PY
           echo "ok: installed skill is self-contained"

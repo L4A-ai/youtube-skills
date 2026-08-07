@@ -15,6 +15,49 @@ Install the skill with:
 npx skills add L4A-ai/youtube-skills --skill youtube-shorts-publish
 ```
 
+## Try it safely in 5 minutes
+
+No Google account, OAuth client, channel access, or real video is required. The packaged verifier
+creates a one-second portrait fixture in a temporary directory, runs only local inspection and
+planning, and removes the fixture before it returns. It cannot upload or change a YouTube channel.
+Its output distinguishes the expected temporary fixture write from the dry plan's zero local writes.
+
+Requirements: Node.js 20+ and FFmpeg.
+
+After installing the skill, paste this into your agent:
+
+> Use `$youtube-shorts-publish` to run the documented zero-input, zero-publish installation check.
+> Locate the installed skill directory and, from that directory, run exactly
+> `node examples/verify-zero-publish.mjs` with no arguments. Do not access Google, YouTube, OAuth
+> credentials, or the network. Return the verifier stdout unchanged.
+
+![Zero-publish proof: a generated 360x640 fixture passed local Shorts inspection, and the dry plan reported no execution, network requests, plan writes, configuration writes, or upload](media/youtube-zero-publish-proof.png)
+
+Exact command from the installed skill directory:
+
+```bash
+node examples/verify-zero-publish.mjs
+```
+
+Expected stdout (one line):
+
+```json
+{"schema_version":"1.0","skill_version":"0.1.0","fixture":"generated-360x640-h264-aac","status":"ok","inspection":{"displayed_dimensions":{"width":360,"height":640},"duration_seconds":1,"video_codec":"h264","audio_codec":"aac","shorts_candidate":true},"plan":{"safe_to_publish":true,"privacy":"private","notify_subscribers":false,"executed":false},"safety":{"oauth_used":false,"network_guard_armed":true,"network_requests":0,"youtube_writes":0,"plan_local_writes":0,"config_dir_created":false,"credential_files_created":false,"temporary_fixture_written":true,"temporary_artifacts_removed":true},"passed":true}
+```
+
+`safe_to_publish` means the local plan passed its checks. It does not mean anything was uploaded.
+`plan_local_writes: 0` applies to the dry plan; the verifier writes and then removes its generated
+fixture under the operating system's temporary directory. Before running the CLI, the verifier
+proves its bundled network guard with a deliberately blocked canary; both CLI commands run under
+that same guard.
+Configure OAuth only when you decide to test a real, explicitly confirmed upload.
+
+[Send a structured zero-publish evaluation report](https://github.com/L4A-ai/youtube-skills/issues/new?template=zero-publish-evaluation.yml)
+after your run. Only a report that explicitly selects **Installed and ran the zero-publish
+evaluation** may count as a completed independent test. Install-only and failed attempts are still
+useful for improving onboarding, but they do not count as completed runs. Never include OAuth
+credentials, tokens, client secrets, authorization codes, or a real channel ID in a report.
+
 It supports:
 
 - `inspect` — ffprobe duration, displayed dimensions, rotation, SAR, codecs, audio, and local

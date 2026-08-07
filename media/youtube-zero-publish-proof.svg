@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
+  <title id="title">Zero-publish YouTube Shorts safety proof</title>
+  <desc id="description">A zero-input verifier generated and removed a one-second 360 by 640 H.264 and AAC fixture after local Shorts inspection and dry planning. The plan stayed private, did not notify subscribers, did not execute, made zero network requests, made zero plan writes, and created no configuration directory.</desc>
+  <metadata>
+    Evidence captured 2026-08-07 by examples/verify-zero-publish.mjs using a fresh temporary FFmpeg fixture followed by ytshorts inspect and ytshorts plan.
+    Input: 1 second, 360x640, H.264 video, silent AAC audio.
+    Output: schema_version=1.0; skill_version=0.1.0; shorts_candidate=true; safe_to_publish=true; privacy=private; notify_subscribers=false; executed=false; network_guard_armed=true; network_requests=0; plan_local_writes=0; config_dir_created=false; credential_files_created=false; temporary_artifacts_removed=true.
+  </metadata>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07111f"/>
+      <stop offset="1" stop-color="#0d1b2d"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#39e6b0"/>
+      <stop offset="1" stop-color="#56a8ff"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000814" flood-opacity="0.34"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#background)"/>
+  <circle cx="1110" cy="70" r="170" fill="#143253" opacity="0.35"/>
+  <circle cx="90" cy="620" r="210" fill="#123f45" opacity="0.28"/>
+  <rect x="54" y="42" width="1092" height="546" rx="30" fill="#0a1727" stroke="#203853" filter="url(#shadow)"/>
+  <rect x="54" y="42" width="1092" height="8" rx="4" fill="url(#accent)"/>
+
+  <text x="92" y="94" fill="#8aa6c4" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="18" font-weight="700" letter-spacing="2.4">YOUTUBE SHORTS PUBLISH / LOCAL PROOF</text>
+  <text x="92" y="151" fill="#f3f8ff" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="44" font-weight="760">Test the upload guard</text>
+  <text x="92" y="201" fill="#f3f8ff" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="44" font-weight="760">without uploading.</text>
+  <text x="92" y="235" fill="#95aac3" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="19">One zero-input command  /  local inspect + dry plan</text>
+
+  <rect x="92" y="270" width="330" height="204" rx="20" fill="#0d2034" stroke="#25415e"/>
+  <text x="120" y="309" fill="#7f9ab7" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" letter-spacing="2">MEDIA INPUT</text>
+  <text x="120" y="362" fill="#f3f8ff" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="36" font-weight="760">360 x 640</text>
+  <text x="120" y="397" fill="#b6c7da" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="19">1.0 sec  /  H.264 + AAC</text>
+  <rect x="120" y="424" width="250" height="30" rx="15" fill="#123f39"/>
+  <circle cx="139" cy="439" r="8" fill="#39e6b0"/>
+  <path d="M135 439l3 3 6-7" fill="none" stroke="#07111f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="157" y="445" fill="#72f0ca" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700">SHORTS CANDIDATE</text>
+
+  <rect x="446" y="270" width="662" height="204" rx="20" fill="#0d2034" stroke="#25415e"/>
+  <text x="474" y="309" fill="#7f9ab7" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" letter-spacing="2">DRY-PLAN EVIDENCE</text>
+
+  <text x="474" y="353" fill="#95aac3" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="17">executed</text>
+  <text x="474" y="385" fill="#f3f8ff" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="25" font-weight="700">false</text>
+  <text x="622" y="353" fill="#95aac3" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="17">network requests</text>
+  <text x="622" y="385" fill="#39e6b0" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="25" font-weight="700">0</text>
+  <text x="818" y="353" fill="#95aac3" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="17">plan writes</text>
+  <text x="818" y="385" fill="#39e6b0" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="25" font-weight="700">0</text>
+  <text x="962" y="353" fill="#95aac3" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="17">config created</text>
+  <text x="962" y="385" fill="#f3f8ff" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="25" font-weight="700">false</text>
+
+  <rect x="474" y="414" width="218" height="34" rx="17" fill="#123f39"/>
+  <circle cx="494" cy="431" r="8" fill="#39e6b0"/>
+  <path d="M490 431l3 3 6-7" fill="none" stroke="#07111f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="512" y="437" fill="#72f0ca" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="700">DRY PLAN PASSED</text>
+  <rect x="706" y="414" width="174" height="34" rx="17" fill="#172d45"/>
+  <text x="727" y="437" fill="#b9cbe0" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="700">PRIVATE</text>
+  <rect x="894" y="414" width="186" height="34" rx="17" fill="#172d45"/>
+  <text x="914" y="437" fill="#b9cbe0" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="700">NOTIFY: FALSE</text>
+
+  <line x1="92" y1="508" x2="1108" y2="508" stroke="#203853"/>
+  <text x="92" y="548" fill="#dce9f7" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="22" font-weight="700">No OAuth  /  No Google API  /  Fixture removed</text>
+  <text x="1108" y="548" text-anchor="end" fill="#718aa5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14">OBSERVED 2026-08-07</text>
+  <text x="92" y="572" fill="#718aa5" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14">“Safe to publish” means local checks passed; it does not mean a video was uploaded.</text>
+</svg>

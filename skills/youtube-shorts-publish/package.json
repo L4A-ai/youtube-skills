@@ -11,7 +11,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "check": "node --check scripts/ytshorts.mjs && node --check scripts/ytshorts-lib.mjs && node --check scripts/ytshorts-api.mjs && node --check scripts/ytshorts-state.mjs",
+    "check": "node --check scripts/ytshorts.mjs && node --check scripts/ytshorts-lib.mjs && node --check scripts/ytshorts-api.mjs && node --check scripts/ytshorts-state.mjs && node --check examples/zero-publish-network-guard.mjs && node --check examples/verify-zero-publish.mjs",
     "test": "node --test scripts/*.test.mjs"
   }
 }
