@@ -43,7 +43,14 @@ runtime to justify a package and fan-out step, add an explicit sync check like `
 
 ## Validation
 
-Run from the skill directory:
+Run the root-only report and proof contract checks from the repository root:
+
+```bash
+ruby .github/scripts/check-zero-publish-report.rb
+ruby .github/scripts/check-zero-publish-proof.rb
+```
+
+Then run from the skill directory:
 
 ```bash
 npm run check

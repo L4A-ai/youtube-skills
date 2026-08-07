@@ -31,7 +31,10 @@ After installing the skill, paste this into your agent:
 > `node examples/verify-zero-publish.mjs` with no arguments. Do not access Google, YouTube, OAuth
 > credentials, or the network. Return the verifier stdout unchanged.
 
-![Zero-publish proof: a generated 360x640 fixture passed local Shorts inspection, and the dry plan reported no execution, network requests, plan writes, configuration writes, or upload](media/youtube-zero-publish-proof.png)
+[![Zero-publish proof: a generated 360x640 fixture passed local Shorts inspection, and the dry plan reported no execution, network requests, plan writes, configuration writes, or upload](media/youtube-zero-publish-proof.png)](media/youtube-zero-publish-proof.svg)
+
+This dated card is local capability and safety-contract evidence, not install, adoption,
+live-upload, or user-attribution evidence.
 
 Exact command from the installed skill directory:
 
@@ -135,6 +138,15 @@ or platform-integrity bypasses. Video generation/editing is intentionally outsid
 offers explicit FFmpeg preparation recipes when local preflight finds a blocker.
 
 ## Development
+
+From the repository root, validate the source-only report and proof contracts:
+
+```bash
+ruby .github/scripts/check-zero-publish-report.rb
+ruby .github/scripts/check-zero-publish-proof.rb
+```
+
+Then run the self-contained skill checks:
 
 ```bash
 cd skills/youtube-shorts-publish

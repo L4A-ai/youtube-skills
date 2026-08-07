@@ -108,6 +108,9 @@ jobs:
       - name: Zero-publish evaluator report contract
         run: ruby .github/scripts/check-zero-publish-report.rb
 
+      - name: Zero-publish proof asset contract
+        run: ruby .github/scripts/check-zero-publish-proof.rb
+
       - name: Skill frontmatter is minimal and complete
         run: |
           python3 - <<'PY'
